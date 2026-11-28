@@ -108,20 +108,10 @@ function drawRoundEdges(w,h){
   });
   jobs.filter(j=>!j.shown).concat(jobs.filter(j=>j.shown)).forEach(j=>j.run());
 }
-function drawCutOutline(cut,w,h,front){
+/* 자른 단면 테두리: 앞·뒤 구분 없이 항상 실선으로 그린다 (점선 없음) */
+function drawCutOutline(cut,w,h){
   const n=cut.length;if(n<3)return;
-  if(g.sphere){const C=camPos(),vis=cut.map(p=>dot(p,C)>1),runs=cyclicRuns(vis);[false,true].forEach(sv=>runs.filter(r=>r.vis===sv).forEach(r=>strokePath(r.idx.map(i=>cut[i]),w,h,sv,'#64e0c3',2.5,'#64e0c3',2)));return}
-  const fn=g.f.map(f=>{const a=g.v[f[0]],b=g.v[f[1]],c=g.v[f[2]],q=cross(sub(b,a),sub(c,a)),l=Math.hypot(...q)||1;return q.map(x=>x/l)});
-  const on=(fi,p)=>Math.abs(dot(fn[fi],sub(p,g.v[g.f[fi][0]])))<1e-4;
-  const vis=[];
-  for(let i=0;i<n;i++){
-    const A=cut[i],B=cut[(i+1)%n],M=A.map((x,k)=>(x+B[k])/2);let seen=false,found=false;
-    for(let fi=0;fi<g.f.length;fi++){if(on(fi,A)&&on(fi,B)){found=true;if(front[fi]){seen=true;break}}}
-    if(!found){for(let fi=0;fi<g.f.length;fi++){if(on(fi,M)&&front[fi]){seen=true;break}}}
-    vis.push(seen);
-  }
-  const runs=cyclicRuns(vis);
-  [false,true].forEach(sv=>runs.filter(r=>r.vis===sv).forEach(r=>strokePath(r.idx.map(i=>cut[i]),w,h,sv,'#64e0c3',2.5,'#64e0c3',2)));
+  strokePath(cut.concat([cut[0]]),w,h,true,'#64e0c3',2.5,'#64e0c3',2.5);
 }
 /* ===== 점선 관련 영역 끝 ===== */
 function drawSection(cut){let w=sc.clientWidth,h=sc.clientHeight,d=Math.min(devicePixelRatio||1,2);let pw=Math.max(1,Math.round(w*d)),ph=Math.max(1,Math.round(h*d));if(sc.width!==pw||sc.height!==ph){sc.width=pw;sc.height=ph}sctx.setTransform(d,0,0,d,0,0);sctx.clearRect(0,0,w,h);if(cut.length<3){sctx.fillStyle='#8292a9';sctx.font='9px sans-serif';sctx.textAlign='center';sctx.fillText('점 3개 선택',w/2,h/2+3);return}let c=[0,0,0];cut.forEach(p=>p.forEach((x,i)=>c[i]+=x/cut.length));let P=plane(),u=cross(P.n,Math.abs(P.n[0])<.8?[1,0,0]:[0,1,0]),l=Math.hypot(...u);u=u.map(x=>x/l);let v=cross(P.n,u),xy=cut.map(p=>[dot(sub(p,c),u),dot(sub(p,c),v)]),xs=xy.map(p=>p[0]),ys=xy.map(p=>p[1]),minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys),scale=Math.min((w-20)/(maxx-minx||1),(h-18)/(maxy-miny||1)),cx=w/2,cy=h/2;sctx.beginPath();xy.forEach((p,i)=>{let x=cx+(p[0]-(minx+maxx)/2)*scale,y=cy-(p[1]-(miny+maxy)/2)*scale;i?sctx.lineTo(x,y):sctx.moveTo(x,y)});sctx.closePath();sctx.fillStyle='#64e0c344';sctx.strokeStyle='#64e0c3';sctx.lineWidth=2;sctx.fill();sctx.stroke();if(!g.sphere)xy.forEach(p=>{sctx.beginPath();sctx.arc(cx+(p[0]-(minx+maxx)/2)*scale,cy-(p[1]-(miny+maxy)/2)*scale,2.5,0,7);sctx.fillStyle='#ffca68';sctx.fill()})}
